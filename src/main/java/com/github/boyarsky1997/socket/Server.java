@@ -4,12 +4,11 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Server {
-    private static final List<String> strings = Arrays.asList("a", "b", "c");
+    private static final Map<String,Socket> strings = new HashMap<>();
 
     public static void main(String[] args) throws IOException {
         try {
@@ -32,6 +31,7 @@ public class Server {
         return new BufferedReader(new InputStreamReader(new FileInputStream(path)))
                 .lines()
                 .collect(Collectors.toList());
+
     }
 
     static class ServerThread extends Thread {
@@ -50,20 +50,33 @@ public class Server {
 
         public void run() {
             String str;
+            List<String> stringList = null;
+            try {
+                stringList = readFile("src\\main\\resources\\clients.txt");
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+            System.out.println(stringList);
             try {
                 while ((str = is.readLine()) != null) {
                     StringBuilder result = new StringBuilder();
                     if (str.startsWith("iam")) {
                         name = str.split(":")[1];
+                        strings.put(name,socket);
                         System.out.println("client " + name + " connected");
-                        String s = strings.get((int) (Math.random() * strings.size()));
-                        List<String> strings = readFile("src\\main\\resources\\" + s + ".txt");
-                        for (String string : strings) {
-                            result.append(string);
+                    }
+
+                    Scanner scanner = new Scanner(System.in);
+                    String s = scanner.nextLine();
+                    String[] s1 = s.split(" ");
+                    for (String s2 : s1) {
+                        if (stringList.contains(s2)){
+                            Socket socket = Server.strings.get(s2);
+                            PrintStream printStream = new PrintStream(socket.getOutputStream());
+                            printStream.println("Привіт");
+                            printStream.flush();
                         }
                     }
-                    os.println(result);
-                    os.flush();
 
                 }
             } catch (IOException e) {
